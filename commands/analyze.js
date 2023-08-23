@@ -42,7 +42,10 @@ module.exports = function analyzeVersions(options/*, command*/) {
       } else {
         const v2PkgPath = path.join(FETCHED_VERSIONS_DIR, pkgName, 'package.json');
 
-        if (!fs.existsSync(v2PkgPath)) {
+        if (pkgName === 'ember-invoke-action') {
+          v2Available = 'N';
+          v2Version = '-';
+        } else if (!fs.existsSync(v2PkgPath)) {
           v2Available = '?';
           v2Version = '?';
         } else {

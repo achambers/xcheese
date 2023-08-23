@@ -140,14 +140,16 @@ function normalizePackageJson(pkgJson) {
     pkg = org;
   }
 
-  console.log(chalk.cyan(owner, repo, org, pkg));
-
   if (org === '@ember-data' && pkg === 'record-data') {
     pkg = 'json-api';
   }
 
   if (org === 'ember-data' && pkg === 'ember-data') {
     pkg = '-ember-data';
+  }
+
+  if (org = 'ember-decorators' && pkg === 'ember-decorators') {
+    pkg = '-ember-decorators';
   }
 
   let paths = [
