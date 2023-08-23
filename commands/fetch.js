@@ -49,8 +49,6 @@ const unfoundPackages = [];
 const ignoredPackages = [];
 
 module.exports = async function fetchVersions(options/*, command*/) {
-  //let opts = command.opts();
-
   let octokit;
 
   if (options.token) {
@@ -78,12 +76,6 @@ module.exports = async function fetchVersions(options/*, command*/) {
 
   let contents = fs.readdirSync(FETCHED_VERSIONS_DIR);
 
-  //if (contents.length > 0 && !options.refreshCache) {
-  //  console.log('Addons already fetch from Github.');
-  //  console.log('Use --refresh-cache to force a refresh');
-  //  process.exit(0);
-  //}
-  
   if (!fs.existsSync(INSTALLED_ADDONS_PATH)) {
     console.log('Must run inspect command before fetching versions');
     process.exit(1);
@@ -113,7 +105,7 @@ module.exports = async function fetchVersions(options/*, command*/) {
       continue;
     }
 
-    let fetchedAddonPath = path.join(FETCHED_VERSIONS_DIR, pkgData.repo, 'package.json');
+    let fetchedAddonPath = path.join(FETCHED_VERSIONS_DIR, pkgData.name, 'package.json');
 
     if (fs.existsSync(fetchedAddonPath) && !options.refreshCache) {
       console.log(chalk.green('hit'), pkgData.name);
@@ -135,11 +127,10 @@ module.exports = async function fetchVersions(options/*, command*/) {
       if (!content) {
         console.log(chalk.redBright('Could not find package.json for'), pkgData.name);
         unfoundPackages.push(pkgData);
-        break;
         continue;
       }
 
-      let pkgCacheDir = path.join(FETCHED_VERSIONS_DIR, pkgData.repo);
+      let pkgCacheDir = path.join(FETCHED_VERSIONS_DIR, pkgData.name);
 
       if (!fs.existsSync(pkgCacheDir)) {
         fs.mkdirSync(pkgCacheDir, { recursive: true });
@@ -169,6 +160,16 @@ function normalizePackageJson(pkgJson) {
 
   if (!pkg) {
     pkg = org;
+  }
+
+  console.log(chalk.cyan(owner, repo, org, pkg));
+
+  if (org === '@ember-data' && pkg === 'record-data') {
+    pkg = 'json-api';
+  }
+
+  if (org === 'ember-data' && pkg === 'ember-data') {
+    pkg = '-ember-data';
   }
 
   let paths = [

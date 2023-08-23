@@ -21,6 +21,10 @@ const ADDON_IGNORES = [
   'node_modules/ember-decorators/package.json'
 ];
 
+const REPO_NOTES = {
+  'ember-invoke-action': 'Repo no longer exists'
+};
+
 module.exports = function analyzeVersions(command) {
   let rows = [];
   let ignoredPackages = [];
@@ -38,7 +42,6 @@ module.exports = function analyzeVersions(command) {
       continue;
     }
 
-    //if (addon.trim() !== '') {
     const pkgPath = path.join(addon, 'package.json');
     const pkgJson = require(pkgPath);
     const pkgName = pkgJson.name;
@@ -55,11 +58,7 @@ module.exports = function analyzeVersions(command) {
         v2Available = 'Y';
         v2Version = pkgVersion;
       } else {
-        let name = pkgName;
-        if (name.includes('/') && name.startsWith('@')) {
-          name = name.split('/')[1];
-        }
-        const v2PkgPath = path.join(process.cwd(), FETCHED_VERSIONS_DIR, name, 'package.json');
+        const v2PkgPath = path.join(process.cwd(), FETCHED_VERSIONS_DIR, pkgName, 'package.json');
 
         if (!fs.existsSync(v2PkgPath)) {
           //console.log(chalk.red(v2PkgPath));
@@ -75,12 +74,10 @@ module.exports = function analyzeVersions(command) {
 
           v2Version = v2Available === 'Y' ? v2PkgVersion : '-';
         }
-
-        // fetch package.json from master and check if ember-addon.version is 2
       }
-      rows.push({ path: addon.trim().replace(path.join(process.cwd(), 'node_modules/'), ''), pkg_version: pkgVersion, addon_version: addonVersion, v2_available: v2Available, v2_version: v2Version });
+
+      rows.push({ path: addon.trim().replace(path.join(process.cwd(), 'node_modules/'), ''), pkg_version: pkgVersion, addon_version: addonVersion, v2_available: v2Available, v2_version: v2Version, notes: REPO_NOTES[pkgName] ?? '' });
     }
-    //}
   }
 
   let p = new Table({
@@ -90,6 +87,7 @@ module.exports = function analyzeVersions(command) {
       { name: 'addon_version', alignment: 'right' },
       { name: 'v2_available', alignment: 'right' },
       { name: 'v2_version', alignment: 'right' },
+      { name: 'notes', alignment: 'left' },
     ],
   });
 
