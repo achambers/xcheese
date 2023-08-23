@@ -16,11 +16,6 @@ const REPO_NOTES = {
 module.exports = function analyzeVersions(options/*, command*/) {
   let rows = [];
 
-  if (!fs.existsSync(INSTALLED_ADDONS_PATH)) {
-    console.log('Must run inspect command before fetching versions');
-    process.exit(1);
-  }
-
   let installedAddons = JSON.parse(fs.readFileSync(INSTALLED_ADDONS_PATH));
 
   for (const addon of installedAddons) {

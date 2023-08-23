@@ -50,18 +50,8 @@ function findPackageJsonPaths(dir, results = []) {
 }
 
 module.exports = function inspectVersions(options, command) {
-  if (!fs.existsSync(NODE_MODULES_PATH)) {
-    command.error(chalk.redBright('Make sure you install your dependencies before running this command'));
-  }
-
-  if (!fs.existsSync(CACHE_PATH)) {
-    fs.mkdirSync(CACHE_PATH);
-  }
-
-  if (fs.existsSync(INSTALLED_ADDONS_PATH) && !options.refreshCache) {
-    console.log('Installed addons already crawled');
-    console.log('Use --refresh-cache to force a refresh');
-    process.exit(0);
+  if (fs.existsSync(INSTALLED_ADDONS_PATH)) {
+    return;
   }
 
   const packageJsonPaths = findPackageJsonPaths(NODE_MODULES_PATH);

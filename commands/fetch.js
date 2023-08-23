@@ -33,7 +33,7 @@ const CACHE_PATH = path.join(NODE_MODULES_PATH, CACHE_DIR);
 const INSTALLED_ADDONS_PATH = path.join(CACHE_PATH, 'installed-addons.json');
 const FETCHED_VERSIONS_DIR = path.join(CACHE_PATH, 'addons');
 
-const unfoundPackages = [];
+//const unfoundPackages = [];
 
 module.exports = async function fetchVersions(options/*, command*/) {
   let octokit;
@@ -53,19 +53,8 @@ module.exports = async function fetchVersions(options/*, command*/) {
     });
   }
 
-  if (!fs.existsSync(CACHE_PATH)) {
-    fs.mkdirSync(CACHE_PATH);
-  }
-
   if (!fs.existsSync(FETCHED_VERSIONS_DIR)) {
     fs.mkdirSync(FETCHED_VERSIONS_DIR);
-  }
-
-  let contents = fs.readdirSync(FETCHED_VERSIONS_DIR);
-
-  if (!fs.existsSync(INSTALLED_ADDONS_PATH)) {
-    console.log('Must run inspect command before fetching versions');
-    process.exit(1);
   }
 
   let installedAddons = JSON.parse(fs.readFileSync(INSTALLED_ADDONS_PATH));
@@ -90,11 +79,10 @@ module.exports = async function fetchVersions(options/*, command*/) {
     let fetchedAddonPath = path.join(FETCHED_VERSIONS_DIR, pkgData.name, 'package.json');
 
     if (fs.existsSync(fetchedAddonPath) && !options.refreshCache) {
-      console.log(chalk.green('hit'), pkgData.name);
-      // Already fetched, no need to do anything
+      //console.log(chalk.green('hit'), pkgData.name);
       continue;
     } else {
-      console.log(chalk.red('miss'), pkgData.name);
+      //console.log(chalk.red('miss'), pkgData.name);
 
       let content;
 
@@ -107,8 +95,8 @@ module.exports = async function fetchVersions(options/*, command*/) {
       }
 
       if (!content) {
-        console.log(chalk.redBright('Could not find package.json for'), pkgData.name);
-        unfoundPackages.push(pkgData);
+        //console.log(chalk.redBright('Could not find package.json for'), pkgData.name, pkgData.owner, pkgData.repo, pkgData.paths);
+        //unfoundPackages.push(pkgData);
         continue;
       }
 
@@ -122,11 +110,11 @@ module.exports = async function fetchVersions(options/*, command*/) {
     }
   }
 
-  if (unfoundPackages.length > 0) {
-    console.log('Unfound packages: ', unfoundPackages.length);
-  }
+  //if (unfoundPackages.length > 0) {
+  //  console.log('Unfound packages: ', unfoundPackages.length);
+  //}
 
-  console.log(chalk.blue('Finished'));
+  //console.log(chalk.blue('Finished'));
 };
 
 function normalizePackageJson(pkgJson) {
@@ -148,7 +136,7 @@ function normalizePackageJson(pkgJson) {
     pkg = '-ember-data';
   }
 
-  if (org = 'ember-decorators' && pkg === 'ember-decorators') {
+  if (org === 'ember-decorators' && pkg === 'ember-decorators') {
     pkg = '-ember-decorators';
   }
 
