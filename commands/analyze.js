@@ -117,15 +117,35 @@ module.exports = function analyzeVersions(command) {
     p.addRow(row, { color: `${row.addon_version === 2 ? 'green' : (row.v2_available === 'Y' ? 'yellow' : 'red')}` });
   }
 
-  console.log(rows.length, 'addons');
-  console.log(rows.filter(row => row.addon_version === 1).length, 'V1 addons');
-  console.log(rows.filter(row => row.addon_version === 2).length, 'V2 addons');
+  let addonsStats = rows.length;
+  let v2AddonsStats = rows.filter(row => row.addon_version === 2).length;
+  let upgradableV1AddonsStats = rows.filter(row => row.addon_version === 1 && row.v2_available === 'Y').length;
+  let v1AddonsStats = rows.filter(row => row.addon_version === 1 && ['N', '?'].includes(row.v2_available)).length;
+
+  const maxWidth = Math.max(
+    String(addonsStats).length,
+    String(v2AddonsStats).length,
+    String(upgradableV1AddonsStats).length,
+    String(v1AddonsStats).length
+  );
+
+  console.log(chalk.blueBright(pad(addonsStats, maxWidth)), 'Addons');
+  console.log(chalk.green(pad(v2AddonsStats, maxWidth)), 'V2 addons');
+  console.log(chalk.yellow(pad(upgradableV1AddonsStats, maxWidth)), 'Upgradable V1 addons');
+  console.log(chalk.red(pad(v1AddonsStats, maxWidth)), 'V1 addons');
 
   p.printTable();
-  //printTable(rows);
 
-  console.log(rows.length, 'addons');
-  console.log(rows.filter(row => row.addon_version === 1).length, 'V1 addons');
-  console.log(rows.filter(row => row.addon_version === 2).length, 'V2 addons');
+  console.log(chalk.blueBright(pad(addonsStats, maxWidth)), 'Addons');
+  console.log(chalk.green(pad(v2AddonsStats, maxWidth)), 'V2 addons');
+  console.log(chalk.yellow(pad(upgradableV1AddonsStats, maxWidth)), 'Upgradable V1 addons');
+  console.log(chalk.red(pad(v1AddonsStats, maxWidth)), 'V1 addons');
+
+
+  function pad(number, width) {
+    const numberString = String(number);
+    const padding = ' '.repeat(width - numberString.length);
+    return padding + numberString;
+  }
 };
 
