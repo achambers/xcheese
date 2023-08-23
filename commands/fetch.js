@@ -5,20 +5,6 @@ const fetch = require('node-fetch');
 
 const { Octokit } = require('@octokit/rest');
 
-const ADDON_IGNORES = [
-  'node_modules/ember-cli/blueprints/',
-  'node_modules/ember-cli/lib/tasks/server/middleware',
-  'node_modules/ember-cli/lib/tasks',
-  'node_modules/ember-route-action-helper/.node_modules.ember-try',
-  'node_modules/ember-cli-dependency-lint/tests-node',
-  'node_modules/ember-one-way-controls/.node_modules.ember-try',
-  'node_modules/ember-cli-typescript-blueprints/blueprints/in-repo-addon/files',
-  'node_modules/@ember-data/canary-features',
-  'node_modules/@ember-data/private-build-infra',
-  'node_modules/tracked-built-ins/node_modules/ember-cli-typescript/test-skeleton-app',
-  'node_modules/ember-decorators/'
-];
-
 const REPO_IGNORES = [
   'martndemus/ember-invoke-action'
 ];
@@ -41,12 +27,13 @@ const REPO_RENAMES = {
   }
 };
 
-const CACHE_DIR = '.cache';
-const FETCHED_VERSIONS_DIR = path.join(CACHE_DIR, 'addons');
-const INSTALLED_ADDONS_PATH = path.join(CACHE_DIR, 'installed-addons.json');
+const NODE_MODULES_PATH = path.join(process.cwd(), 'node_modules');
+const CACHE_DIR = '.xcache';
+const CACHE_PATH = path.join(NODE_MODULES_PATH, CACHE_DIR);
+const INSTALLED_ADDONS_PATH = path.join(CACHE_PATH, 'installed-addons.json');
+const FETCHED_VERSIONS_DIR = path.join(CACHE_PATH, 'addons');
 
 const unfoundPackages = [];
-const ignoredPackages = [];
 
 module.exports = async function fetchVersions(options/*, command*/) {
   let octokit;
@@ -66,8 +53,8 @@ module.exports = async function fetchVersions(options/*, command*/) {
     });
   }
 
-  if (!fs.existsSync(CACHE_DIR)) {
-    fs.mkdirSync(CACHE_DIR);
+  if (!fs.existsSync(CACHE_PATH)) {
+    fs.mkdirSync(CACHE_PATH);
   }
 
   if (!fs.existsSync(FETCHED_VERSIONS_DIR)) {
@@ -84,11 +71,6 @@ module.exports = async function fetchVersions(options/*, command*/) {
   let installedAddons = JSON.parse(fs.readFileSync(INSTALLED_ADDONS_PATH));
 
   for (let addonPath of installedAddons) {
-    if (ADDON_IGNORES.some(ignore => addonPath.startsWith(path.join(process.cwd(), ignore)))) {
-      ignoredPackages.push(addonPath);
-      continue;
-    }
-
     let pkgJsonPath = path.join(addonPath, 'package.json');
 
     if (!fs.existsSync(pkgJsonPath)) {
@@ -142,10 +124,6 @@ module.exports = async function fetchVersions(options/*, command*/) {
 
   if (unfoundPackages.length > 0) {
     console.log('Unfound packages: ', unfoundPackages.length);
-  }
-
-  if (ignoredPackages.length > 0) {
-    console.log('Ignored packages: ', ignoredPackages.length);
   }
 
   console.log(chalk.blue('Finished'));

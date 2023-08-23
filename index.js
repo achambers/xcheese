@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 
-const pkg = require('./package.json');
+const path = require('path');
+const pkg = require(path.join(__dirname, 'package.json'));
 const { Command } = require('commander');
 const figlet = require('figlet');
 const fs = require('fs');
-const path = require('path');
+const chalk = require('chalk');
 const inspectVersions = require('./commands/inspect');
 const fetchAddons = require('./commands/fetch');
 const analyzeAddons = require('./commands/analyze');
 
-console.log(figlet.textSync(pkg.name));
+console.log(chalk.yellowBright(figlet.textSync(pkg.name)));
 
 const program = new Command();
 
@@ -18,9 +19,7 @@ let inspectCommand = program.command('inspect');
 inspectCommand
   .description('Inspect installed ember addons')
   .option('-r, --refresh-cache', 'Recrawl node_modules for package.json files regardless of cache')
-  .action((options, command) => {
-    inspectVersions(command);
-  });
+  .action(inspectVersions);
 
 let fetchCommand = program.command('fetch');
 

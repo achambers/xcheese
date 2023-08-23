@@ -3,31 +3,18 @@ const path = require('path');
 const chalk = require('chalk');
 const { Table } = require('console-table-printer');
 
-const CACHE_DIR = '.cache';
-const FETCHED_VERSIONS_DIR = path.join(CACHE_DIR, 'addons');
-const INSTALLED_ADDONS_PATH = path.join(CACHE_DIR, 'installed-addons.json');
-
-const ADDON_IGNORES = [
-  'node_modules/ember-cli/blueprints/',
-  'node_modules/ember-cli/lib/tasks/server/middleware',
-  'node_modules/ember-cli/lib/tasks',
-  'node_modules/ember-route-action-helper/.node_modules.ember-try',
-  'node_modules/ember-cli-dependency-lint/tests-node',
-  'node_modules/ember-one-way-controls/.node_modules.ember-try',
-  'node_modules/ember-cli-typescript-blueprints/blueprints/in-repo-addon/files',
-  'node_modules/@ember-data/canary-features',
-  'node_modules/@ember-data/private-build-infra',
-  'node_modules/tracked-built-ins/node_modules/ember-cli-typescript/test-skeleton-app',
-  'node_modules/ember-decorators/package.json'
-];
+const NODE_MODULES_PATH = path.join(process.cwd(), 'node_modules');
+const CACHE_DIR = '.xcache';
+const CACHE_PATH = path.join(NODE_MODULES_PATH, CACHE_DIR);
+const INSTALLED_ADDONS_PATH = path.join(CACHE_PATH, 'installed-addons.json');
+const FETCHED_VERSIONS_DIR = path.join(CACHE_PATH, 'addons');
 
 const REPO_NOTES = {
   'ember-invoke-action': 'Repo no longer exists'
 };
 
-module.exports = function analyzeVersions(command) {
+module.exports = function analyzeVersions(/*options, command*/) {
   let rows = [];
-  let ignoredPackages = [];
 
   if (!fs.existsSync(INSTALLED_ADDONS_PATH)) {
     console.log('Must run inspect command before fetching versions');
@@ -37,11 +24,6 @@ module.exports = function analyzeVersions(command) {
   let installedAddons = JSON.parse(fs.readFileSync(INSTALLED_ADDONS_PATH));
 
   for (const addon of installedAddons) {
-    if (ADDON_IGNORES.some(ignore => addon.startsWith(path.join(process.cwd(), ignore)))) {
-      ignoredPackages.push(addon);
-      continue;
-    }
-
     const pkgPath = path.join(addon, 'package.json');
     const pkgJson = require(pkgPath);
     const pkgName = pkgJson.name;
@@ -58,14 +40,12 @@ module.exports = function analyzeVersions(command) {
         v2Available = 'Y';
         v2Version = pkgVersion;
       } else {
-        const v2PkgPath = path.join(process.cwd(), FETCHED_VERSIONS_DIR, pkgName, 'package.json');
+        const v2PkgPath = path.join(FETCHED_VERSIONS_DIR, pkgName, 'package.json');
 
         if (!fs.existsSync(v2PkgPath)) {
-          //console.log(chalk.red(v2PkgPath));
           v2Available = '?';
           v2Version = '?';
         } else {
-          //console.log(chalk.green(v2PkgPath));
           const v2PkgJson = require(v2PkgPath);
           const v2PkgVersion = v2PkgJson.version;
           const v2EmberAddon = v2PkgJson['ember-addon'];
@@ -76,7 +56,7 @@ module.exports = function analyzeVersions(command) {
         }
       }
 
-      rows.push({ path: addon.trim().replace(path.join(process.cwd(), 'node_modules/'), ''), pkg_version: pkgVersion, addon_version: addonVersion, v2_available: v2Available, v2_version: v2Version, notes: REPO_NOTES[pkgName] ?? '' });
+      rows.push({ path: addon.trim().replace(path.join(NODE_MODULES_PATH, '/'), ''), pkg_version: pkgVersion, addon_version: addonVersion, v2_available: v2Available, v2_version: v2Version, notes: REPO_NOTES[pkgName] ?? '' });
     }
   }
 
@@ -113,7 +93,6 @@ module.exports = function analyzeVersions(command) {
   rows = [...v2, ...v1WithV2Available, ...v1WithUnknownV2Available, ...v1WithNoV2Available];
 
   for (const row of rows) {
-    //p.addRow(row, { color: `${row.addon_version === 1 ? 'red' : 'green'}` });
     p.addRow(row, { color: `${row.addon_version === 2 ? 'green' : (row.v2_available === 'Y' ? 'yellow' : 'red')}` });
   }
 
