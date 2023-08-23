@@ -2,6 +2,12 @@ const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
 const fetch = require('node-fetch');
+const util = require('util');
+
+const exists = util.promisify(fs.exists);
+const mkdir = util.promisify(fs.mkdir);
+const writeFile = util.promisify(fs.writeFile);
+const readFile = util.promisify(fs.readFile);
 
 const { Octokit } = require('@octokit/rest');
 
@@ -35,7 +41,7 @@ const FETCHED_VERSIONS_DIR = path.join(CACHE_PATH, 'addons');
 
 //const unfoundPackages = [];
 
-module.exports = async function fetchVersions(options/*, command*/) {
+module.exports = async function fetchVersions(options, command) {
   let octokit;
 
   if (options.token) {
@@ -53,21 +59,21 @@ module.exports = async function fetchVersions(options/*, command*/) {
     });
   }
 
-  if (!fs.existsSync(FETCHED_VERSIONS_DIR)) {
-    fs.mkdirSync(FETCHED_VERSIONS_DIR);
+  if (!(await exists(FETCHED_VERSIONS_DIR))) {
+    await mkdir(FETCHED_VERSIONS_DIR);
   }
 
-  let installedAddons = JSON.parse(fs.readFileSync(INSTALLED_ADDONS_PATH));
+  let installedAddons = JSON.parse(await readFile(INSTALLED_ADDONS_PATH));
 
   for (let addonPath of installedAddons) {
     let pkgJsonPath = path.join(addonPath, 'package.json');
 
-    if (!fs.existsSync(pkgJsonPath)) {
+    if (!(await exists(pkgJsonPath))) {
       console.warn('No package.json found for', addonPath);
       continue;
     }
 
-    let pkgJsonString = fs.readFileSync(pkgJsonPath, 'utf-8');
+    let pkgJsonString = await readFile(pkgJsonPath, 'utf-8');
     let pkgJson = JSON.parse(pkgJsonString);
 
     let pkgData = normalizePackageJson(pkgJson);
@@ -78,7 +84,7 @@ module.exports = async function fetchVersions(options/*, command*/) {
 
     let fetchedAddonPath = path.join(FETCHED_VERSIONS_DIR, pkgData.name, 'package.json');
 
-    if (fs.existsSync(fetchedAddonPath) && !options.refreshCache) {
+    if ((await exists(fetchedAddonPath)) && !options.refreshCache) {
       //console.log(chalk.green('hit'), pkgData.name);
       continue;
     } else {
@@ -102,11 +108,11 @@ module.exports = async function fetchVersions(options/*, command*/) {
 
       let pkgCacheDir = path.join(FETCHED_VERSIONS_DIR, pkgData.name);
 
-      if (!fs.existsSync(pkgCacheDir)) {
-        fs.mkdirSync(pkgCacheDir, { recursive: true });
+      if (!(await exists(pkgCacheDir))) {
+        await mkdir(pkgCacheDir, { recursive: true });
       }
 
-      fs.writeFileSync(path.join(pkgCacheDir, 'package.json'), content);
+      await writeFile(path.join(pkgCacheDir, 'package.json'), content);
     }
   }
 

@@ -1,6 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
+const util = require('util');
+
+const exists = util.promisify(fs.exists);
+const writeFile = util.promisify(fs.writeFile);
+const readdir = util.promisify(fs.readdir);
+const stat = util.promisify(fs.stat);
 
 const NODE_MODULES_PATH = path.join(process.cwd(), 'node_modules');
 const CACHE_DIR = '.xcache';
@@ -22,12 +28,13 @@ const PATHS_TO_IGNORE = [
   'tracked-built-ins/node_modules/ember-cli-typescript/test-skeleton-app',
 ];
 
-function findPackageJsonPaths(dir, results = []) {
+async function findPackageJsonPaths(dir, results = []) {
+  results = await results;
   if (PATHS_TO_IGNORE.some(ignore => dir.startsWith(path.join(NODE_MODULES_PATH, '/', ignore)))) {
     return results;
   }
 
-  let files = fs.readdirSync(dir);
+  let files = await readdir(dir);
 
   if (files.includes('package.json')) {
     let packageJsonPath = path.join(dir, 'package.json');
@@ -39,7 +46,7 @@ function findPackageJsonPaths(dir, results = []) {
 
   for (let file of files) {
     let filePath = path.join(dir, file);
-    let isDirectory = fs.statSync(filePath).isDirectory();
+    let isDirectory = (await stat(filePath)).isDirectory();
 
     if (isDirectory) {
       results = findPackageJsonPaths(filePath, results);
@@ -49,12 +56,12 @@ function findPackageJsonPaths(dir, results = []) {
   return results;
 }
 
-module.exports = function crawlCommand(options, command) {
-  if (fs.existsSync(INSTALLED_ADDONS_PATH)) {
+module.exports = async function crawlCommand(options, command) {
+  if (await exists(INSTALLED_ADDONS_PATH)) {
     return;
   }
 
-  const packageJsonPaths = findPackageJsonPaths(NODE_MODULES_PATH);
+  const packageJsonPaths = await findPackageJsonPaths(NODE_MODULES_PATH);
 
-  fs.writeFileSync(INSTALLED_ADDONS_PATH, JSON.stringify(packageJsonPaths));
+  await writeFile(INSTALLED_ADDONS_PATH, JSON.stringify(packageJsonPaths));
 }

@@ -9,6 +9,7 @@
     "commander": "^11.0.0",
     "console-table-printer": "^2.11.2",
     "figlet": "^1.6.0",
-    "node-fetch": "^2.6.13"
+    "node-fetch": "^2.6.13",
+    "ora": "5.4.1"
   }
 }

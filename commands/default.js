@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
+const ora = require('ora');
 
 const crawlCommand = require('./crawl');
 const fetchCommand = require('./fetch');
@@ -17,7 +18,7 @@ module.exports = async function defaultCommand(options, command) {
     command.error(chalk.redBright('node_modules not found: Please install dependencies'));
   }
 
-  if (fs.existsSync(CACHE_PATH) && options.cacheClean) {
+  if (fs.existsSync(CACHE_PATH) && options.cleanCache) {
     try {
       fs.rmSync(CACHE_PATH, { recursive: true });
     } catch (err) {
@@ -29,13 +30,31 @@ module.exports = async function defaultCommand(options, command) {
     fs.mkdirSync(CACHE_PATH);
   }
 
-  console.log('Crawling node_modules for installed ember addons');
+  let spinner = ora({
+    text: 'Crawling node_modules for installed ember addons',
+    color: 'yellow'
+  }).start();
 
   await crawlCommand(options, command);
 
-  console.log('Fetching latest package.json files for installed ember addons');
+  spinner.stopAndPersist({
+    text: chalk.greenBright('Crawling node_modules for installed ember addons'),
+    symbol: '🧀'
+  });
+
+  spinner = ora({
+    text: 'Fetching latest package.json files for installed ember addons',
+    color: 'yellow'
+  }).start();
 
   await fetchCommand(options, command);
+
+  spinner.stopAndPersist({
+    text: chalk.greenBright('Fetching latest package.json files for installed ember addons'),
+    symbol: '🧀'
+  });
+
+  console.log();
 
   await analyzeCommand(options, command);
 };

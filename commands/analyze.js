@@ -137,10 +137,12 @@ module.exports = function analyzeVersions(options/*, command*/) {
 
   p.printTable();
 
+  console.log();
   console.log(chalk.blueBright(pad(addonsStats, maxWidth)), 'Addons (', chalk.blueBright(addonsStatsUnique), 'unique )');
   console.log(chalk.green(pad(v2AddonsStats, maxWidth)), 'V2 addons (', chalk.green(v2AddonsStatsUnique), 'unique )');
   console.log(chalk.yellow(pad(upgradableV1AddonsStats, maxWidth)), 'Upgradable V1 addons (', chalk.yellow(upgradableV1AddonsStatsUnique), 'unique )');
   console.log(chalk.red(pad(v1AddonsStats, maxWidth)), 'V1 addons (', chalk.red(v1AddonsStatsUnique), 'unique )');
+  console.log();
 };
 
 function pad(number, width) {
