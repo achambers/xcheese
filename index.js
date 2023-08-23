@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const inspectVersions = require('./commands/inspect');
 const fetchAddons = require('./commands/fetch');
+const analyzeAddons = require('./commands/analyze');
 
 console.log(figlet.textSync(pkg.name));
 
@@ -28,6 +29,12 @@ fetchCommand
   .option('-r, --refresh-cache', 'Refetch package.json files from Github regardless of cache')
   .option('-t, --token [value]', 'Github token for API auth. Need of a larger API rate limit')
   .action(fetchAddons)
+
+let analyzeCommand = program.command('analyze');
+
+analyzeCommand
+  .description('Analyze and addons and print v1 vs v2 status')
+  .action(analyzeAddons);
 
 program
   .version(pkg.version)
