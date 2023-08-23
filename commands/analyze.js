@@ -13,7 +13,7 @@ const REPO_NOTES = {
   'ember-invoke-action': 'Repo no longer exists'
 };
 
-module.exports = function analyzeVersions(/*options, command*/) {
+module.exports = function analyzeVersions(options/*, command*/) {
   let rows = [];
 
   if (!fs.existsSync(INSTALLED_ADDONS_PATH)) {
@@ -56,7 +56,18 @@ module.exports = function analyzeVersions(/*options, command*/) {
         }
       }
 
-      rows.push({ path: addon.trim().replace(path.join(NODE_MODULES_PATH, '/'), ''), pkg_version: pkgVersion, addon_version: addonVersion, v2_available: v2Available, v2_version: v2Version, notes: REPO_NOTES[pkgName] ?? '' });
+      rows.push({
+        path: addon.trim().replace(path.join(NODE_MODULES_PATH, '/'), ''),
+        pkg_version: pkgVersion,
+        addon_version: addonVersion,
+        v2_available: v2Available,
+        v2_version: v2Version,
+        notes: REPO_NOTES[pkgName] ?? '',
+        get unique_name() {
+          let segments = this.path.split('/');
+          return segments[segments.length - 1];
+        }
+      });
     }
   }
 
@@ -69,10 +80,9 @@ module.exports = function analyzeVersions(/*options, command*/) {
       { name: 'v2_version', alignment: 'right' },
       { name: 'notes', alignment: 'left' },
     ],
+    disabledColumns: ['unique_name'],
   });
 
-  //sort rows by path
-  //rows.sort((a, b) => (a.path > b.path) ? 1 : -1);
   rows.sort((a, b) => {
     let aParts = a.path.split('/');
     let bParts = b.path.split('/');
@@ -80,7 +90,6 @@ module.exports = function analyzeVersions(/*options, command*/) {
     let aPkg  = aParts[aParts.length - 1];
     let bPkg  = bParts[bParts.length - 1];
 
-    //return (a.path > b.path) ? 1 : -1
     return (aPkg > bPkg) ? 1 : -1
   });
 
@@ -92,14 +101,21 @@ module.exports = function analyzeVersions(/*options, command*/) {
 
   rows = [...v2, ...v1WithV2Available, ...v1WithUnknownV2Available, ...v1WithNoV2Available];
 
-  for (const row of rows) {
-    p.addRow(row, { color: `${row.addon_version === 2 ? 'green' : (row.v2_available === 'Y' ? 'yellow' : 'red')}` });
-  }
+  let groupedV2 = groupByAddon(v2);
+  let groupedV1WithV2Available = groupByAddon(v1WithV2Available);
+  let groupedV1WithNoV2Available = groupByAddon(v1WithNoV2Available);
+  let groupedV1WithUnknownV2Available = groupByAddon(v1WithUnknownV2Available);
+
+  let groupedRows = [...groupedV2, ...groupedV1WithV2Available, ...groupedV1WithUnknownV2Available, ...groupedV1WithNoV2Available];
 
   let addonsStats = rows.length;
-  let v2AddonsStats = rows.filter(row => row.addon_version === 2).length;
-  let upgradableV1AddonsStats = rows.filter(row => row.addon_version === 1 && row.v2_available === 'Y').length;
-  let v1AddonsStats = rows.filter(row => row.addon_version === 1 && ['N', '?'].includes(row.v2_available)).length;
+  let addonsStatsUnique = rows.filter((row, index, self) => self.findIndex(r => r.unique_name === row.unique_name) === index).length;
+  let v2AddonsStats = v2.length;
+  let v2AddonsStatsUnique = v2.filter((row, index, self) => self.findIndex(r => r.unique_name === row.unique_name) === index).length;
+  let upgradableV1AddonsStats = v1WithV2Available.length;
+  let upgradableV1AddonsStatsUnique = v1WithV2Available.filter((row, index, self) => self.findIndex(r => r.unique_name === row.unique_name) === index).length;
+  let v1AddonsStats = [...v1WithNoV2Available, ...v1WithUnknownV2Available].length;
+  let v1AddonsStatsUnique = [...v1WithNoV2Available, ...v1WithUnknownV2Available].filter((row, index, self) => self.findIndex(r => r.unique_name === row.unique_name) === index).length;
 
   const maxWidth = Math.max(
     String(addonsStats).length,
@@ -108,23 +124,92 @@ module.exports = function analyzeVersions(/*options, command*/) {
     String(v1AddonsStats).length
   );
 
-  console.log(chalk.blueBright(pad(addonsStats, maxWidth)), 'Addons');
-  console.log(chalk.green(pad(v2AddonsStats, maxWidth)), 'V2 addons');
-  console.log(chalk.yellow(pad(upgradableV1AddonsStats, maxWidth)), 'Upgradable V1 addons');
-  console.log(chalk.red(pad(v1AddonsStats, maxWidth)), 'V1 addons');
+  console.log(chalk.blueBright(pad(addonsStats, maxWidth)), 'Addons (', chalk.blueBright(addonsStatsUnique), 'unique )');
+  console.log(chalk.green(pad(v2AddonsStats, maxWidth)), 'V2 addons (', chalk.green(v2AddonsStatsUnique), 'unique )');
+  console.log(chalk.yellow(pad(upgradableV1AddonsStats, maxWidth)), 'Upgradable V1 addons (', chalk.yellow(upgradableV1AddonsStatsUnique), 'unique )');
+  console.log(chalk.red(pad(v1AddonsStats, maxWidth)), 'V1 addons (', chalk.red(v1AddonsStatsUnique), 'unique )');
+
+  if (!options.expandDuplicates) {
+    rows = groupedRows;
+  }
+
+  for (const row of rows) {
+    p.addRow(row, { color: `${row.addon_version === 2 ? 'green' : (row.v2_available === 'Y' ? 'yellow' : 'red')}` });
+  }
 
   p.printTable();
 
-  console.log(chalk.blueBright(pad(addonsStats, maxWidth)), 'Addons');
-  console.log(chalk.green(pad(v2AddonsStats, maxWidth)), 'V2 addons');
-  console.log(chalk.yellow(pad(upgradableV1AddonsStats, maxWidth)), 'Upgradable V1 addons');
-  console.log(chalk.red(pad(v1AddonsStats, maxWidth)), 'V1 addons');
-
-
-  function pad(number, width) {
-    const numberString = String(number);
-    const padding = ' '.repeat(width - numberString.length);
-    return padding + numberString;
-  }
+  console.log(chalk.blueBright(pad(addonsStats, maxWidth)), 'Addons (', chalk.blueBright(addonsStatsUnique), 'unique )');
+  console.log(chalk.green(pad(v2AddonsStats, maxWidth)), 'V2 addons (', chalk.green(v2AddonsStatsUnique), 'unique )');
+  console.log(chalk.yellow(pad(upgradableV1AddonsStats, maxWidth)), 'Upgradable V1 addons (', chalk.yellow(upgradableV1AddonsStatsUnique), 'unique )');
+  console.log(chalk.red(pad(v1AddonsStats, maxWidth)), 'V1 addons (', chalk.red(v1AddonsStatsUnique), 'unique )');
 };
 
+function pad(number, width) {
+  const numberString = String(number);
+  const padding = ' '.repeat(width - numberString.length);
+  return padding + numberString;
+}
+
+function extract(s) {
+  const lastNodeModulesIndex = s.lastIndexOf('node_modules');
+  return s.substr(lastNodeModulesIndex + 'node_modules'.length + 1);
+}
+
+function groupByAddon(arr) {
+  const consolidated = {};
+
+  arr.forEach((item) => {
+    const isNested = item.path.includes('node_modules');
+    const packageName = isNested ? extract(item.path) : item.path;
+
+    if (!consolidated[packageName]) {
+      consolidated[packageName] = {
+        ...item,
+        path: packageName,
+        version: null,
+        versions: new Set(),
+      };
+    }
+
+    if (!isNested) {
+      consolidated[packageName].version = item.pkg_version;
+    } else {
+      consolidated[packageName].versions.add(item.pkg_version);
+    }
+  });
+
+  let collection = [];
+
+  Object.values(consolidated).forEach((item) => {
+    if (item.version) {
+      collection.push({ path: item.path, pkg_version: item.version, addon_version: item.addon_version, v2_available: item.v2_available, v2_version: item.v2_version, notes: item.notes, unique_name: item.unique_name });
+    }
+
+    if (item.versions.size > 0) {
+      if (item.versions.size > 1) {
+        collection.push({
+          path: `**/${item.path}`,
+          pkg_version: Array.from(item.versions).sort().join(', '),
+          addon_version: item.addon_version,
+          v2_available: item.v2_available,
+          v2_version: item.v2_version,
+          notes: item.notes,
+          unique_name: item.unique_name,
+        });
+      } else {
+        collection.push({
+          path: item.path,
+          pkg_version: Array.from(item.versions).sort().join(', '),
+          addon_version: item.addon_version,
+          v2_available: item.v2_available,
+          v2_version: item.v2_version,
+          notes: item.notes,
+          unique_name: item.unique_name,
+        });
+      }
+    }
+  });
+
+  return collection;
+}

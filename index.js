@@ -33,6 +33,7 @@ let analyzeCommand = program.command('analyze');
 
 analyzeCommand
   .description('Analyze and addons and print v1 vs v2 status')
+  .option('-e, --expand-duplicates', 'Expand duplicate usages of an addon')
   .action(analyzeAddons);
 
 program
