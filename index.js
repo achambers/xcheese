@@ -4,11 +4,7 @@ const path = require('path');
 const pkg = require(path.join(__dirname, 'package.json'));
 const { Command } = require('commander');
 const figlet = require('figlet');
-const fs = require('fs');
 const chalk = require('chalk');
-const inspectVersions = require('./commands/inspect');
-const fetchAddons = require('./commands/fetch');
-const analyzeAddons = require('./commands/analyze');
 const defaultCommand = require('./commands/default');
 
 console.log(chalk.yellowBright(figlet.textSync(pkg.name)));

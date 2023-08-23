@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
 
-const inspectCommand = require('./inspect');
+const crawlCommand = require('./crawl');
 const fetchCommand = require('./fetch');
 const analyzeCommand = require('./analyze');
 
@@ -31,7 +31,7 @@ module.exports = async function defaultCommand(options, command) {
 
   console.log('Crawling node_modules for installed ember addons');
 
-  await inspectCommand(options, command);
+  await crawlCommand(options, command);
 
   console.log('Fetching latest package.json files for installed ember addons');
 

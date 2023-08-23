@@ -49,7 +49,7 @@ function findPackageJsonPaths(dir, results = []) {
   return results;
 }
 
-module.exports = function inspectVersions(options, command) {
+module.exports = function crawlCommand(options, command) {
   if (fs.existsSync(INSTALLED_ADDONS_PATH)) {
     return;
   }
