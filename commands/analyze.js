@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
-const { Table } = require("console-table-printer");
+const { Table } = require('console-table-printer');
 
 const CACHE_DIR = '.cache';
 const FETCHED_VERSIONS_DIR = path.join(CACHE_DIR, 'addons');
@@ -55,14 +55,18 @@ module.exports = function analyzeVersions(command) {
         v2Available = 'Y';
         v2Version = pkgVersion;
       } else {
-        const v2PkgPath = path.join(process.cwd(), FETCHED_VERSIONS_DIR, pkgName, 'package.json');
+        let name = pkgName;
+        if (name.includes('/') && name.startsWith('@')) {
+          name = name.split('/')[1];
+        }
+        const v2PkgPath = path.join(process.cwd(), FETCHED_VERSIONS_DIR, name, 'package.json');
 
         if (!fs.existsSync(v2PkgPath)) {
+          //console.log(chalk.red(v2PkgPath));
           v2Available = '?';
           v2Version = '?';
         } else {
-          //console.log(v2PkgPath);
-          console.log(chalk.green(v2PkgPath));
+          //console.log(chalk.green(v2PkgPath));
           const v2PkgJson = require(v2PkgPath);
           const v2PkgVersion = v2PkgJson.version;
           const v2EmberAddon = v2PkgJson['ember-addon'];
