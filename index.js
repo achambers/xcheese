@@ -6,6 +6,7 @@ const figlet = require('figlet');
 const fs = require('fs');
 const path = require('path');
 const inspectVersions = require('./commands/inspect');
+const fetchAddons = require('./commands/fetch');
 
 console.log(figlet.textSync(pkg.name));
 
@@ -20,11 +21,16 @@ inspectCommand
     inspectVersions(command);
   });
 
+let fetchCommand = program.command('fetch');
+
+fetchCommand
+  .description('Fetch package.json for latest version of all addons from Github')
+  .option('-r, --refresh-cache', 'Refetch package.json files from Github regardless of cache')
+  .option('-t, --token [value]', 'Github token for API auth. Need of a larger API rate limit')
+  .action(fetchAddons)
+
 program
   .version(pkg.version)
   .description(pkg.description)
-//  .command('inspect', 'Inspect installed ember addons')
-//  .option('-i, --inspect-versions', 'Compile list of installed ember addons')
-  .option('-t, --token [value]', 'Github token for API auth')
-//  .option('-r, --refresh-cache', 'Fetch new versions of package.json files from Github regardless of cache')
-  .parse(process.argv);
+  .option('-c, --clean-cache', 'Delete the cache directory')
+  .parseAsync(process.argv);
