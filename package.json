@@ -3,12 +3,12 @@
   "version": "1.0.0",
   "description": "A tool to analyze your ember addons to determine v1 vs v2",
   "bin": "./index.js",
-  "devDependencies": {
-    "@octokit/rest": "^20.0.1",
-    "chalk": "4",
+  "dependencies": {
+    "@octokit/rest": "^19.0.13",
+    "chalk": "^4.1.2",
     "commander": "^11.0.0",
     "console-table-printer": "^2.11.2",
     "figlet": "^1.6.0",
-    "node-fetch": "2"
+    "node-fetch": "^2.6.13"
   }
 }
