@@ -187,27 +187,15 @@ function groupByAddon(arr) {
     }
 
     if (item.versions.size > 0) {
-      if (item.versions.size > 1) {
-        collection.push({
-          path: `**/${item.path}`,
-          pkg_version: Array.from(item.versions).sort().join(', '),
-          addon_version: item.addon_version,
-          v2_available: item.v2_available,
-          v2_version: item.v2_version,
-          notes: item.notes,
-          unique_name: item.unique_name,
-        });
-      } else {
-        collection.push({
-          path: item.path,
-          pkg_version: Array.from(item.versions).sort().join(', '),
-          addon_version: item.addon_version,
-          v2_available: item.v2_available,
-          v2_version: item.v2_version,
-          notes: item.notes,
-          unique_name: item.unique_name,
-        });
-      }
+      collection.push({
+        path: `**/${item.path}`,
+        pkg_version: Array.from(item.versions).sort().join(', '),
+        addon_version: item.addon_version,
+        v2_available: item.v2_available,
+        v2_version: item.v2_version,
+        notes: item.notes,
+        unique_name: item.unique_name,
+      });
     }
   });
 
