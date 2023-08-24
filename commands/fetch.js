@@ -81,7 +81,29 @@ module.exports = async function fetchVersions(options, command, spinner) {
     let pkgJsonString = await readFile(pkgJsonPath, 'utf-8');
     let pkgJson = JSON.parse(pkgJsonString);
 
-    let pkgData = normalizePackageJson(pkgJson);
+    let repositories = {};
+    for (let repo of (options.repository || [])) {
+      let [p, u] = repo.split('|');
+
+      if (!u) {
+        // Invalid option value passed in
+        continue;
+      }
+
+      repositories[p] = u;
+    }
+
+    let pkgData = normalizePackageJson(pkgJson, repositories);
+
+    if (!pkgData) {
+      if (options.verbose) {
+        spinner.clear();
+        console.log(chalk.yellow('no repository url:'), addonPath.replace(`${NODE_MODULES_PATH}/`, ''));
+        spinner.render();
+      }
+
+      continue;
+    }
 
     if (REPO_IGNORES.includes(`${pkgData.owner}/${pkgData.repo}`)) {
       continue;
@@ -162,8 +184,14 @@ module.exports = async function fetchVersions(options, command, spinner) {
   }
 };
 
-function normalizePackageJson(pkgJson) {
-  let [ownerOrig, repoOrig, url] = normalizeUrl(pkgJson);
+function normalizePackageJson(pkgJson, repositories) {
+  let props = normalizeUrl(pkgJson, repositories);
+
+  if (!props) {
+    return;
+  }
+
+  let [ownerOrig, repoOrig, url] = props;
 
   let { owner, repo } = REPO_RENAMES[`${ownerOrig}/${repoOrig}`] ?? { owner: ownerOrig, repo: repoOrig };
 
@@ -207,7 +235,7 @@ function normalizePackageJson(pkgJson) {
   };
 }
 
-function normalizeUrl(pkgJson) {
+function normalizeUrl(pkgJson, repositories) {
   let { repository } = pkgJson;
 
   let url;
@@ -218,8 +246,18 @@ function normalizeUrl(pkgJson) {
     } else if (typeof repository === 'object' && repository.url) {
       url = repository.url;
     }
-  } else {
+  }
+
+  if (!url) {
     url = NO_SPECIFIED_REPO[pkgJson.name];
+  }
+
+  if (!url) {
+    url = repositories[pkgJson.name];
+  }
+
+  if (!url) {
+    return;
   }
 
   url = url.replace(/\.git$/, '');

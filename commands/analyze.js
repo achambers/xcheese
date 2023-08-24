@@ -24,7 +24,6 @@ module.exports = function analyzeVersions(options/*, command*/) {
     const pkgName = pkgJson.name;
     const pkgVersion = pkgJson.version;
     const emberAddon = pkgJson['ember-addon'];
-    const repo = pkgJson.repository;
 
     if (emberAddon) {
       const addonVersion = emberAddon.version ?? 1;
