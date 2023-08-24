@@ -17,7 +17,7 @@ const PATHS_TO_IGNORE = [
   CACHE_DIR,
   '@ember-data/canary-features',
   '@ember-data/private-build-infra',
-  '@ember/jquery/node_modules/resolve/test/resolver/malformed_package_json',
+  //'@ember/jquery/node_modules/resolve/test/resolver/malformed_package_json',
   'ember-cli-dependency-lint/tests-node',
   'ember-cli-typescript-blueprints/blueprints/in-repo-addon/files',
   'ember-cli/blueprints',
@@ -38,7 +38,17 @@ async function findPackageJsonPaths(dir, results, options, spinner) {
 
   if (files.includes('package.json')) {
     let packageJsonPath = path.join(dir, 'package.json');
-    let packageJsonContent = require(packageJsonPath);
+    let packageJsonContent;
+
+    try {
+      packageJsonContent = require(packageJsonPath);
+    } catch (e) {
+      //if (e instanceof SyntaxError && e.message.includes('JSON')) {
+      //}
+
+      return results;
+    }
+
     if (packageJsonContent.keywords && packageJsonContent.keywords.includes('ember-addon')) {
       if (options.verbose) {
         spinner.clear();
