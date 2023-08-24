@@ -7,6 +7,7 @@ const figlet = require('figlet');
 const chalk = require('chalk');
 const defaultCommand = require('./commands/default');
 
+console.log(chalk.yellowBright(figlet.textSync('    x   ', { font: 'Efti Wall' })));
 console.log(chalk.yellowBright(figlet.textSync(pkg.name)));
 
 const program = new Command();
