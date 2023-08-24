@@ -69,17 +69,51 @@ module.exports = function analyzeVersions(options/*, command*/) {
     }
   }
 
-  let p = new Table({
-    columns: [
-      { name: 'path', alignment: 'right' },
-      { name: 'pkg_version', alignment: 'right' },
-      { name: 'addon_version', alignment: 'right' },
-      { name: 'v2_available', alignment: 'right' },
-      { name: 'v2_version', alignment: 'right' },
-      { name: 'notes', alignment: 'left' },
-    ],
-    disabledColumns: ['unique_name'],
-  });
+  let ghMarkdownStyle = {
+    headerTop: {
+      left: '',
+      mid: '',
+      right: '',
+      other: '',
+    },
+    headerBottom: {
+      left: '|',
+      mid: '|',
+      right: '|',
+      other: '-',
+    },
+    tableBottom: {
+      left: '|',
+      mid: '',
+      right: '|',
+      other: '-',
+    },
+    vertical: '|',
+  };
+
+  let columns = [
+    { name: 'path', alignment: 'right' },
+    { name: 'pkg_version', alignment: 'right' },
+    { name: 'addon_version', alignment: 'right' },
+    { name: 'v2_available', alignment: 'right' },
+    { name: 'v2_version', alignment: 'right' },
+    { name: 'notes', alignment: 'left' },
+  ];
+
+  let p;
+
+  if (options.githubMarkdown) {
+    p = new Table({
+      columns,
+      style: ghMarkdownStyle,
+      disabledColumns: ['unique_name'],
+    });
+  } else {
+    p = new Table({
+      columns,
+      disabledColumns: ['unique_name'],
+    });
+  }
 
   rows.sort((a, b) => {
     let aParts = a.path.split('/');
@@ -135,7 +169,16 @@ module.exports = function analyzeVersions(options/*, command*/) {
     p.addRow(row, { color: `${row.addon_version === 2 ? 'green' : (row.v2_available === 'Y' ? 'yellow' : 'red')}` });
   }
 
-  p.printTable();
+  if (options.githubMarkdown) {
+    const colorRegex = /\x1b\[\d{1,3}(;\d{1,3})*m/g;
+
+    const stripAnsi = (str) => str.replace(colorRegex, '');
+    const rendered = stripAnsi(p.render());
+    console.log(rendered);
+  } else {
+    p.printTable();
+  }
+
 
   console.log();
   console.log(chalk.blueBright(pad(addonsStats, maxWidth)), 'Addons (', chalk.blueBright(addonsStatsUnique), 'unique )');

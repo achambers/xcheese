@@ -18,6 +18,7 @@ program
   .description(pkg.description)
   .option('-c, --clean-cache', 'Delete the cache, forcing a recrawl of node_modules and refetch of package.json files from GitHub')
   .option('-e, --expand-duplicates', 'Expand duplicate usages of an addon')
+  .option('-g, --github-markdown', 'Output audit table in GitHub markdown format')
   .option('-t, --token [value]', 'Github token for API auth. Need of a larger API rate limit')
   .option('-v, --verbose', 'Print verbose output')
   .action(defaultCommand);
