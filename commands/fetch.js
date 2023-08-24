@@ -39,9 +39,10 @@ const CACHE_PATH = path.join(NODE_MODULES_PATH, CACHE_DIR);
 const INSTALLED_ADDONS_PATH = path.join(CACHE_PATH, 'installed-addons.json');
 const FETCHED_VERSIONS_DIR = path.join(CACHE_PATH, 'addons');
 
-//const unfoundPackages = [];
+const unfoundPackages = new Set();
+const seenPackages = new Set();
 
-module.exports = async function fetchVersions(options, command) {
+module.exports = async function fetchVersions(options, command, spinner) {
   let octokit;
 
   if (options.token) {
@@ -69,7 +70,11 @@ module.exports = async function fetchVersions(options, command) {
     let pkgJsonPath = path.join(addonPath, 'package.json');
 
     if (!(await exists(pkgJsonPath))) {
-      console.warn('No package.json found for', addonPath);
+      if (options.verbose) {
+        spinner.clear();
+        console.log(chalk.yellow('missing: '), addonPath);
+        spinner.render();
+      }
       continue;
     }
 
@@ -82,13 +87,30 @@ module.exports = async function fetchVersions(options, command) {
       continue;
     }
 
+    if (seenPackages.has(pkgData.name)) {
+      continue;
+    }
+
     let fetchedAddonPath = path.join(FETCHED_VERSIONS_DIR, pkgData.name, 'package.json');
 
     if ((await exists(fetchedAddonPath)) && !options.refreshCache) {
-      //console.log(chalk.green('hit'), pkgData.name);
+      if (options.verbose) {
+        spinner.clear();
+        console.log(chalk.green('hit'), pkgData.name);
+        spinner.render();
+      }
+
+      seenPackages.add(pkgData.name);
+
       continue;
     } else {
-      //console.log(chalk.red('miss'), pkgData.name);
+      if (options.verbose) {
+        spinner.clear();
+        console.log(chalk.red('miss'), pkgData.name);
+        spinner.render();
+      }
+
+      seenPackages.add(pkgData.name);
 
       let content;
 
@@ -101,8 +123,18 @@ module.exports = async function fetchVersions(options, command) {
       }
 
       if (!content) {
-        //console.log(chalk.redBright('Could not find package.json for'), pkgData.name, pkgData.owner, pkgData.repo, pkgData.paths);
-        //unfoundPackages.push(pkgData);
+        if (options.verbose) {
+          spinner.clear();
+          console.log(chalk.red('not found:'), pkgData.name);
+          console.log(chalk.dim.redBright('  attempted the following paths:'));
+          for (let urlPath of pkgData.paths) {
+            console.log(chalk.dim.redBright(`    - https://github.com/${pkgData.owner}/${pkgData.repo}/blob/master${urlPath}`));
+          }
+          spinner.render();
+        }
+
+        unfoundPackages.add(pkgData.name);
+
         continue;
       }
 
@@ -116,11 +148,18 @@ module.exports = async function fetchVersions(options, command) {
     }
   }
 
-  //if (unfoundPackages.length > 0) {
-  //  console.log('Unfound packages: ', unfoundPackages.length);
-  //}
-
-  //console.log(chalk.blue('Finished'));
+  if (unfoundPackages.size > 0) {
+    if (options.verbose) {
+      spinner.clear();
+      console.log();
+      console.log(chalk.yellow(`${unfoundPackages.size} packages not found`));
+      for (let pkg of unfoundPackages) {
+        console.log(chalk.yellow(`  - ${pkg}`));
+      }
+      console.log();
+      spinner.render();
+    }
+  }
 };
 
 function normalizePackageJson(pkgJson) {
@@ -197,7 +236,6 @@ function normalizeUrl(pkgJson) {
       return [...parts, `https://github.com/${parts[0]}/${parts[1]}`];
     }
 
-    console.warn(chalk.yellow(url));
     return;
   }
 

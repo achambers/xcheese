@@ -35,7 +35,7 @@ module.exports = async function defaultCommand(options, command) {
     color: 'yellow'
   }).start();
 
-  await crawlCommand(options, command);
+  await crawlCommand(options, command, spinner);
 
   spinner.stopAndPersist({
     text: chalk.greenBright('Crawling node_modules for installed ember addons'),
@@ -47,7 +47,7 @@ module.exports = async function defaultCommand(options, command) {
     color: 'yellow'
   }).start();
 
-  await fetchCommand(options, command);
+  await fetchCommand(options, command, spinner);
 
   spinner.stopAndPersist({
     text: chalk.greenBright('Fetching latest package.json files for installed ember addons'),

@@ -28,7 +28,7 @@ const PATHS_TO_IGNORE = [
   'tracked-built-ins/node_modules/ember-cli-typescript/test-skeleton-app',
 ];
 
-async function findPackageJsonPaths(dir, results = []) {
+async function findPackageJsonPaths(dir, results, options, spinner) {
   results = await results;
   if (PATHS_TO_IGNORE.some(ignore => dir.startsWith(path.join(NODE_MODULES_PATH, '/', ignore)))) {
     return results;
@@ -40,6 +40,11 @@ async function findPackageJsonPaths(dir, results = []) {
     let packageJsonPath = path.join(dir, 'package.json');
     let packageJsonContent = require(packageJsonPath);
     if (packageJsonContent.keywords && packageJsonContent.keywords.includes('ember-addon')) {
+      if (options.verbose) {
+        spinner.clear();
+        console.log(chalk.green('found: '), dir.concat('/package.json').replace(path.join(NODE_MODULES_PATH, '/'), ''));
+        spinner.render();
+      }
       results = [...results, dir];
     }
   }
@@ -49,19 +54,19 @@ async function findPackageJsonPaths(dir, results = []) {
     let isDirectory = (await stat(filePath)).isDirectory();
 
     if (isDirectory) {
-      results = findPackageJsonPaths(filePath, results);
+      results = findPackageJsonPaths(filePath, results, options, spinner);
     }
   }
 
   return results;
 }
 
-module.exports = async function crawlCommand(options, command) {
+module.exports = async function crawlCommand(options, command, spinner) {
   if (await exists(INSTALLED_ADDONS_PATH)) {
     return;
   }
 
-  const packageJsonPaths = await findPackageJsonPaths(NODE_MODULES_PATH);
+  const packageJsonPaths = await findPackageJsonPaths(NODE_MODULES_PATH, [], options, spinner);
 
   await writeFile(INSTALLED_ADDONS_PATH, JSON.stringify(packageJsonPaths));
 }
